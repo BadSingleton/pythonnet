@@ -320,6 +320,7 @@ namespace Python.Runtime
 
                 initialized = false;
             }
+            TypeManager.Cleanup();
         }
 
         /// <summary>

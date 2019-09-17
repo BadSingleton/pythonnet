@@ -28,6 +28,18 @@ namespace Python.Runtime
             cache = new Dictionary<Type, IntPtr>(128);
         }
 
+        [PyGIL]
+        public static void Cleanup()
+        {
+            // Clobber the types so accessing them causes raises an AttributeError
+            foreach(var entry in cache)
+            {
+                Marshal.WriteIntPtr(entry.Value, TypeOffset.tp_setattro, IntPtr.Zero);
+                Marshal.WriteIntPtr(entry.Value, TypeOffset.tp_getattro, IntPtr.Zero);
+                Marshal.WriteIntPtr(entry.Value, TypeOffset.tp_call, IntPtr.Zero);
+            }
+        }
+
         /// <summary>
         /// Given a managed Type derived from ExtensionType, get the handle to
         /// a Python type object that delegates its implementation to the Type

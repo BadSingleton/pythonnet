@@ -76,6 +76,14 @@ namespace Python.Runtime
             {
                 Runtime.XDecref(py_clr_module);
                 Runtime.XDecref(root.pyHandle);
+                
+                // restore the original import function
+                IntPtr dict = Runtime.PyImport_GetModuleDict();
+                IntPtr mod = Runtime.IsPython3
+                    ? Runtime.PyImport_ImportModule("builtins")
+                    : Runtime.PyDict_GetItemString(dict, "__builtin__");
+                Runtime.PyObject_SetAttrString(mod, "__import__", py_import);
+
                 Runtime.XDecref(py_import);
             }
         }
@@ -199,6 +207,7 @@ namespace Python.Runtime
                         Runtime.PyDict_SetItemString(sys_modules, "clr", clr_module);
                     }
                 }
+                PythonEngine.AddShutdownHandler(()=>{IntPtr sys_modules = Runtime.PyImport_GetModuleDict();Runtime.PyDict_DelItemString(sys_modules, "clr");});
                 return clr_module;
             }
             if (mod_name == "CLR")
@@ -213,6 +222,7 @@ namespace Python.Runtime
                         Runtime.PyDict_SetItemString(sys_modules, "clr", clr_module);
                     }
                 }
+                PythonEngine.AddShutdownHandler(()=>{IntPtr sys_modules = Runtime.PyImport_GetModuleDict();Runtime.PyDict_DelItemString(sys_modules, "clr");});
                 return clr_module;
             }
             string realname = mod_name;
@@ -347,11 +357,13 @@ namespace Python.Runtime
 
                 // Add the module to sys.modules
                 Runtime.PyDict_SetItemString(modules, tail.moduleName, tail.pyHandle);
+                PythonEngine.AddShutdownHandler(()=>{IntPtr sys_modules = Runtime.PyImport_GetModuleDict();Runtime.PyDict_DelItemString(sys_modules, tail.moduleName);});
 
                 // If imported from CLR add CLR.<modulename> to sys.modules as well
                 if (clr_prefix != null)
                 {
                     Runtime.PyDict_SetItemString(modules, clr_prefix + tail.moduleName, tail.pyHandle);
+                    PythonEngine.AddShutdownHandler(()=>{IntPtr sys_modules = Runtime.PyImport_GetModuleDict();Runtime.PyDict_DelItemString(sys_modules, clr_prefix + tail.moduleName);});
                 }
             }
 

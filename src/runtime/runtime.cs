@@ -377,7 +377,9 @@ namespace Python.Runtime
             Exceptions.Shutdown();
             ImportHook.Shutdown();
             Finalizer.Shutdown();
-            Py_Finalize();
+            // Don't finalize, cleanup the types
+            // Py_Finalize();
+            TypeManager.Cleanup();
         }
 
         // called *without* the GIL acquired by clr._AtExit
